@@ -1,0 +1,14 @@
+{
+  "name": "p2pexperiment",
+  "scripts": {
+    "start": "node main.mjs"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.13.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.7",
+    "utf-8-validate": "^6.0.3"
+  }
+}
