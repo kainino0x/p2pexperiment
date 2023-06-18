@@ -1,7 +1,9 @@
 {
   "name": "p2pexperiment",
   "scripts": {
-    "start": "node main.mjs"
+    "start": "node main.mjs",
+    "update": "git fetch origin && git checkout --detach origin/main",
+    "updatestart": "npm run update && npm start"
   },
   "dependencies": {
     "express": "^4.18.2",
