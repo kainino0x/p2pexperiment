@@ -7,7 +7,7 @@ const peerMap = new Map();
 
 function p2pBroadcast(k, v) {
   for (const peer of peerMap.values()) {
-    if (peer.simplePeer.writable) {
+    if (peer.simplePeer.connected) {
       sendKeyedMessage(peer.simplePeer, k, v);
     }
   }
@@ -16,7 +16,11 @@ function p2pBroadcast(k, v) {
 // HTML stuff
 
 function updateHTMLPeerList() {
-  htmlPeerList.innerText = `You are: ${selfId}. Peers: ${Array.from(peerMap.entries(), ([k, v]) => `${k}${v.simplePeer.writable ? '🔗' : '⏳'}`).join(', ')}.`;
+  htmlYouAre.innerText = selfId;
+  htmlPeerList.innerText = Array.from(peerMap.entries(), ([k, v]) => {
+    const icon = !v.simplePeer ? '🆕' : v.simplePeer.connected ? '🔗' : v.simplePeer.destroyed ? '❌' : '⏳';
+    return `${k}${icon}`;
+  }).join(', ');
 }
 function addHTMLChatLog(from, msg) {
   const htmlMsg = document.createElement('span')
@@ -91,12 +95,7 @@ ws.onopen = evOpen => {
       const latestPeers = new Set();
       for (const { id } of v.peers) {
         latestPeers.add(id);
-        if (!peerMap.has(id)) {
-          const simplePeer = initSimplePeer(id);
-          peerMap.set(id, {
-            simplePeer,
-          });
-        }
+        ensurePeer(id);
       }
       for (const id of peerMap.keys()) {
         if (!latestPeers.has(id)) {
@@ -116,33 +115,53 @@ ws.onopen = evOpen => {
 
   // SimplePeer (P2P) stuff
 
-  function initSimplePeer(id) {
+  function ensurePeer(id) {
+    let peer = peerMap.get(id);
+    if (!peer) {
+      peer = {};
+      peerMap.set(id, peer);
+    }
+    if (peer.simplePeer && peer.simplePeer.connected) {
+      return;
+    }
+
     const sp = new SimplePeer({
       initiator: selfId < id,
       trickle: false, // ?
-    });
-    sp.on('error', err => console.log('SimplePeer error', err));
-    sp.on('signal', data => {
-      sendKeyedMessage(ws, 'peersignal', {
-        to: id,
-        data,
-      });
-    });
-    sp.on('connect', () => {
-    });
-    sp.on('close', () => {
-    });
-    sp.on('data', data => {
-      const msg = JSON.parse(data);
-      for (const [k, v] of Object.entries(msg)) {
-        if (k in p2pHandlers) {
-          p2pHandlers[k](id, v);
-        } else {
-          console.warn('p2p unknown key');
+    })
+      .on('error', err => {
+        console.log('SimplePeer error', err);
+        updateHTMLPeerList();
+        // Retry in 2s
+        setTimeout(() => {
+          ensurePeer(id);
+        }, 2000);
+      })
+      .on('signal', data => {
+        sendKeyedMessage(ws, 'peersignal', {
+          to: id,
+          data,
+        });
+      })
+      .on('connect', () => {
+        updateHTMLPeerList();
+      })
+      .on('close', () => {
+        updateHTMLPeerList();
+      })
+      .on('data', data => {
+        const msg = JSON.parse(data);
+        for (const [k, v] of Object.entries(msg)) {
+          if (k in p2pHandlers) {
+            p2pHandlers[k](id, v);
+          } else {
+            console.warn('p2p unknown key');
+          }
         }
-      }
-    });
-    return sp;
+      });
+
+    peer.simplePeer = sp;
+    updateHTMLPeerList();
   }
 
   const p2pHandlers = {
