@@ -18,13 +18,26 @@ function p2pBroadcast(k, v) {
   }
 }
 
+function pingAll() {
+  for (const peer of peerMap.values()) {
+    if (peer.simplePeer?.connected && (!peer.pingSend || peer.pingRecv)) {
+      peer.pingSend = performance.now();
+      peer.pingRecv = undefined;
+      sendKeyedMessage(peer.simplePeer, 'ping', {});
+    }
+  }
+  updateHTMLPeerList();
+}
+setInterval(pingAll, 5000);
+
 // HTML stuff
 
 function updateHTMLPeerList() {
   htmlYouAre.innerText = selfId;
   htmlPeerList.innerText = Array.from(peerMap.entries(), ([k, v]) => {
     const icon = !v.simplePeer ? '🆕' : v.simplePeer.connected ? '🔗' : v.simplePeer.destroyed ? '❌' : '⏳';
-    return `${k}${icon}`;
+      const rtt = (v.pingSend && v.pingRecv) ? Math.round(v.pingRecv - v.pingSend) : '?';
+    return `${k}${icon}(${rtt}ms)`;
   }).join(', ');
 }
 function addHTMLChatLog(from, msg) {
@@ -175,6 +188,14 @@ ws.onopen = evOpen => {
     },
     draw(from, v) {
       addCanvasDot(from, v);
+    },
+    ping(from, v) {
+      const sp = peerMap.get(from).simplePeer;
+      sendKeyedMessage(sp, 'pong', {});
+    },
+    pong(from, v) {
+      peerMap.get(from).pingRecv = performance.now();
+      updateHTMLPeerList();
     },
   };
 };

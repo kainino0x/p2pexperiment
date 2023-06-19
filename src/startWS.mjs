@@ -48,6 +48,7 @@ export function startWS() {
 
     conn.on('close', () => {
       peerMap.delete(selfId);
+      sendAllPeerLists();
     });
     conn.on('error', () => {
       conn.close();
