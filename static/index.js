@@ -14,7 +14,7 @@ function p2pBroadcast(k, v) {
 // HTML stuff
 
 function updateHTMLPeerList() {
-  htmlPeerList.innerText = `You are: ${selfId}. Connected: ${Array.from(peerMap.keys()).join(', ')}`;
+  htmlPeerList.innerText = `You are: ${selfId}. Connected to peers: ${Array.from(peerMap.keys()).join(', ')}.`;
 }
 function addHTMLChatLog(from, msg) {
   const htmlMsg = document.createElement('span')
@@ -38,11 +38,18 @@ htmlForm.onsubmit = ev => {
 
 // Canvas stuff
 
+const kCanvasWidth = 60, kCanvasHeight = 30;
+htmlCanvas.width = kCanvasWidth;
+htmlCanvas.height = kCanvasHeight;
 const ctx = htmlCanvas.getContext('2d');
+htmlCanvas.ondblclick = ev => {
+  // prevent double tap zoom on mobile
+  ev.preventDefault();
+};
 htmlCanvas.onclick = ev => {
   const bound = ev.target.getBoundingClientRect();
-  const x = ev.clientX - bound.x;
-  const y = ev.clientY - bound.y;
+  const x = Math.floor((ev.clientX - bound.x) / bound.width * kCanvasWidth);
+  const y = Math.floor((ev.clientY - bound.y) / bound.height * kCanvasHeight);
   addCanvasDot(selfId, { x, y });
   p2pBroadcast('draw', { x, y });
 };
@@ -51,12 +58,14 @@ function addCanvasDot(id, { x, y }) {
   if (!id) return;
   const hue = (id * 0.61803399) % 1.0;
   ctx.fillStyle = `oklch(50% 0.15 ${hue}turn)`;
-  ctx.fillRect(x - 2, y - 2, 4, 4);
+  ctx.fillRect(x, y, 1, 1);
 }
 
 // Networking
 
 ws.onopen = evOpen => {
+  htmlMsgBox.disabled = false;
+
   // WebSocket (client-server) stuff
 
   ws.onmessage = evMessage => {

@@ -2,17 +2,55 @@
 <html>
 
 <head>
-  <title></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>p2ppaint</title>
+  <style>
+    @media (prefers-color-scheme: light) {
+      html {
+        background: white;
+        color: black;
+      }
+    }
+    @media (prefers-color-scheme: dark) {
+      html {
+        background: #181a1b;
+        color: white;
+      }
+    }
+
+    html {
+      max-width: 100vh;
+    }
+
+    #htmlCanvas {
+      border: 2px dotted gray;
+      width: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    #htmlChat {
+      border: thin solid gray;
+    }
+
+    #htmlMsgBox {
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+  </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.1/simplepeer.min.js"></script>
 </head>
 
 <body>
-  <canvas id=htmlCanvas style="border: 2px dotted gray"></canvas>
-  <p id=htmlPeerList></p>
-  <ul id=htmlChatLog></ul>
-  <form id=htmlForm method=get action="">
-    <input id=htmlMsgBox type=text placeholder="type a message..." size=50>
-  </form>
+  <canvas id=htmlCanvas></canvas>
+  <p id=htmlPeerList>Loading...</p>
+  <div id="htmlChat">
+    <ul id=htmlChatLog></ul>
+    <form id=htmlForm method=get action="">
+      <input id=htmlMsgBox type=text placeholder="type a message..." disabled>
+    </form>
+  </div>
   <script type=module src="index.js"></script>
 </body>
 
