@@ -1,6 +1,11 @@
-import { kWSProtocol, kWSPort, sendKeyedMessage } from './common.mjs';
+import { kWSProtocol, kWSPort, sendKeyedMessage, kWSSPort } from './common.mjs';
 
-const ws = new WebSocket(`ws://${window.location.hostname}:${kWSPort}`, kWSProtocol);
+const wsURL =
+  window.location.protocol === 'http:' ?  `ws://${window.location.hostname}:${kWSPort}` :
+  window.location.protocol === 'https:' ? `wss://${window.location.hostname}:${kWSSPort}` :
+  (() => { throw new Error('invalid page protocol ' + window.location.protocol); })();
+
+const ws = new WebSocket(wsURL, kWSProtocol);
 
 let selfId;
 const peerMap = new Map();
