@@ -7,14 +7,16 @@ const peerMap = new Map();
 
 function p2pBroadcast(k, v) {
   for (const peer of peerMap.values()) {
-    sendKeyedMessage(peer.simplePeer, k, v);
+    if (peer.simplePeer.writable) {
+      sendKeyedMessage(peer.simplePeer, k, v);
+    }
   }
 }
 
 // HTML stuff
 
 function updateHTMLPeerList() {
-  htmlPeerList.innerText = `You are: ${selfId}. Connected to peers: ${Array.from(peerMap.keys()).join(', ')}.`;
+  htmlPeerList.innerText = `You are: ${selfId}. Peers: ${Array.from(peerMap.entries(), ([k, v]) => `${k}${v.simplePeer.writable ? '🔗' : '⏳'}`).join(', ')}.`;
 }
 function addHTMLChatLog(from, msg) {
   const htmlMsg = document.createElement('span')
